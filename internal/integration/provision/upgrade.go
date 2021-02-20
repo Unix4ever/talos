@@ -136,6 +136,29 @@ func upgradeStableReleaseToCurrent() upgradeSpec {
 	}
 }
 
+// upgradeCurrentReleaseToCurrent upgrades current version to the current version of Talos.
+func upgradeCurrentReleaseToCurrent() upgradeSpec {
+	installerImage := fmt.Sprintf("%s/%s:%s", DefaultSettings.TargetInstallImageRegistry, images.DefaultInstallerImageName, DefaultSettings.CurrentVersion)
+	return upgradeSpec{
+		ShortName: fmt.Sprintf("%s-%s", stableRelease, DefaultSettings.CurrentVersion),
+
+		SourceKernelPath:     helpers.ArtifactPath(filepath.Join(trimVersion(stableRelease), constants.KernelAsset)),
+		SourceInitramfsPath:  helpers.ArtifactPath(filepath.Join(trimVersion(stableRelease), constants.InitramfsAsset)),
+		SourceInstallerImage: installerImage,
+		SourceVersion:        DefaultSettings.CurrentVersion,
+		SourceK8sVersion:     stableK8sVersion,
+		SourceSelfHosted:     true,
+
+		TargetInstallerImage: installerImage,
+		TargetVersion:        DefaultSettings.CurrentVersion,
+		TargetK8sVersion:     stableK8sVersion, // TODO: skip k8s upgrade: currentK8sVersion,
+		TargetSelfHosted:     false,
+
+		MasterNodes: DefaultSettings.MasterNodes,
+		WorkerNodes: DefaultSettings.WorkerNodes,
+	}
+}
+
 // upgradeSingeNodePreserve upgrade last release of Talos to the current version of Talos for single-node cluster with preserve.
 func upgradeSingeNodePreserve() upgradeSpec {
 	return upgradeSpec{
@@ -655,6 +678,7 @@ func init() {
 	allSuites = append(allSuites,
 		&UpgradeSuite{specGen: upgradeBetweenTwoLastReleases, track: 0},
 		&UpgradeSuite{specGen: upgradeStableReleaseToCurrent, track: 1},
+		&UpgradeSuite{specGen: upgradeCurrentReleaseToCurrent, track: 2},
 		&UpgradeSuite{specGen: upgradeSingeNodePreserve, track: 0},
 		&UpgradeSuite{specGen: upgradeSingeNodeStage, track: 1},
 	)
